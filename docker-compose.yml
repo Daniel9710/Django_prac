@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  db:
+    image: mysql
+    volumes:
+      - ../data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_USER=user1
+      - MYSQL_PASSWORD=1234
+      - MYSQL_DATABASE=test
+    container_name: mysql
+    expose:
+      - "3306"
+  django:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/code/
+    environment:
+      - DJANGO_DEBUG=False
+      - DJANGO_DB_HOST=db
+      - DJANGO_DB_PORT=3306
+      - DJAGNO_DB_USERNAME=user1
+      - DJANGO_DB_PASSWORD=1234
+    container_name: django
+    expose:
+      - "8000"
+    depends_on:
+      - db
+  nginx:
+    image: nginx
+    volumes:
+      #- ./.config/nginx-app.conf:/etc/nginx/sites-enabled/nginx-app.conf
+      #- ./.config/nginx-app.conf:/etc/nginx/sites-available/nginx-app.conf
+      - ./.config/nginx-app.conf:/etc/nginx/conf.d/nginx-app.conf
+      - ./.config/uwsgi.sock:/tmp/uwsgi.sock
+      #- ./.config/nginx.conf:/etc/nginx/nginx.conf
+    container_name: nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - django
+    command: ['nginx', '-g', 'daemon off;']
+
+
